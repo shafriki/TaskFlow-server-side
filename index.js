@@ -162,6 +162,34 @@ async function run() {
       }
     });
 
+
+    // Get only "In Progress" tasks by email
+app.get('/tasks/inprogress/:email', async (req, res) => {
+  try {
+    const userEmail = req.params.email;
+    const tasks = await tasksCollection.find({ email: userEmail, category: "In Progress" }).toArray();
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Error fetching In Progress tasks:", error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// Get only "Done" tasks by email
+app.get('/tasks/done/:email', async (req, res) => {
+  try {
+    const userEmail = req.params.email;
+    const tasks = await tasksCollection.find({ email: userEmail, category: "Done" }).toArray();
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Error fetching Done tasks:", error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
     // Delete task by id
     app.delete('/tasks/:id', async (req, res) => {
       try {

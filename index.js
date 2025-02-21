@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 
 // Middleware
 const corsOptions = {
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173','https://taskflow-tms.web.app'],
   credentials: true,
   optionSuccessStatus: 200,
 };
@@ -51,7 +51,7 @@ io.on("connection", (socket) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const usersCollection = client.db('TaskFlow').collection('users');
     const tasksCollection = client.db('TaskFlow').collection('tasks');
 
@@ -242,7 +242,7 @@ async function run() {
       }
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Connected to MongoDB!");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);

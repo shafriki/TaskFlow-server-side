@@ -93,6 +93,20 @@ async function run() {
       }
     });
 
+    // Get only "To-Do" tasks by email
+    app.get('/tasks/todo/:email', async (req, res) => {
+      try {
+          const userEmail = req.params.email;
+          const tasks = await tasksCollection.find({ email: userEmail, category: "To-Do" }).toArray();
+
+          res.status(200).json(tasks);
+      } catch (error) {
+          console.error("Error fetching To-Do tasks:", error);
+          res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
+
     // Delete task by id
     app.delete('/tasks/:id', async (req, res) => {
       try {

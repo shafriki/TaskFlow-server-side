@@ -69,6 +69,37 @@ async function run() {
       }
     });
 
+    app.post('/tasks/update', async (req, res) => {
+      try {
+        const { taskId, updatedTask } = req.body;
+    
+        // Ensure that taskId and updatedTask are provided in the request
+        if (!taskId || !updatedTask) {
+          return res.status(400).json({ message: 'Task ID and updated task data are required' });
+        }
+    
+        const result = await tasksCollection.updateOne(
+          { _id: new ObjectId(taskId) }, // Find task by ID
+          {
+            $set: {
+              ...updatedTask,             // Update the task fields
+              updatedAt: new Date(),      // Track the update time
+            },
+          }
+        );
+    
+        if (result.modifiedCount === 0) {
+          return res.status(404).json({ message: 'Task not found or no changes made' });
+        }
+    
+        res.status(200).json({ message: 'Task updated successfully', result });
+      } catch (error) {
+        console.error("Error updating task:", error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+    
+
     // Get all tasks
     app.get('/tasks', async (req, res) => {
       try {

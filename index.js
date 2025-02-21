@@ -33,6 +33,7 @@ async function run() {
   try {
     await client.connect();
     const usersCollection = client.db('TaskFlow').collection('users');
+    const tasksCollection = client.db('TaskFlow').collection('tasks');
 
     // Save user in DB
     app.post('/users/:email', async (req, res) => {
@@ -52,12 +53,70 @@ async function run() {
       res.send(result);
     });
 
+    // Save task
+    app.post('/tasks', async (req, res) => {
+      try {
+          const task = req.body;  
+          const result = await tasksCollection.insertOne({
+              ...task,
+              createdAt: new Date(),
+          });
+  
+          res.status(201).send(result);
+      } catch (error) {
+          console.error("Error saving task:", error);
+          res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
+    // Get all tasks
+    app.get('/tasks', async (req, res) => {
+      try {
+          const tasks = await tasksCollection.find().toArray();
+          res.status(200).json(tasks);
+      } catch (error) {
+          console.error("Error fetching tasks:", error);
+          res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
+    // Get tasks by email
+    app.get('/tasks/:email', async (req, res) => {
+      try {
+          const userEmail = req.params.email;
+          const tasks = await tasksCollection.find({ email: userEmail }).toArray();
+
+          res.status(200).json(tasks);
+      } catch (error) {
+          console.error("Error fetching tasks:", error);
+          res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
+    // Delete task by id
+    app.delete('/tasks/:id', async (req, res) => {
+      try {
+        const taskId = req.params.id;
+        const result = await tasksCollection.deleteOne({ _id: new ObjectId(taskId) });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Task not found' });
+        }
+
+        res.status(200).json({ message: 'Task deleted successfully' });
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("Connected to MongoDB!");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
   }
 }
+
 run().catch(console.dir);
 
 app.get('/', (req, res) => {

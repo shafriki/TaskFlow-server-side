@@ -125,6 +125,40 @@ async function run() {
       }
     });
 
+    // To handle the category change for drag-and-drop (Client-side calls this to update category)
+    app.post('/tasks/update-category', async (req, res) => {
+      try {
+        const { taskId, updatedCategory } = req.body;
+
+        if (!taskId || !updatedCategory) {
+          return res.status(400).json({ message: 'Task ID and updated category are required' });
+        }
+
+        // Update the category field in the task
+        const result = await tasksCollection.updateOne(
+          { _id: new ObjectId(taskId) },
+          {
+            $set: {
+              category: updatedCategory,
+              updatedAt: new Date(), // Timestamp the update
+            },
+          }
+        );
+
+        if (result.modifiedCount === 0) {
+          return res.status(404).json({ message: 'Task not found or no changes made' });
+        }
+
+        // Emit event to update all connected clients when a task's category is updated
+        io.emit("taskUpdated");
+
+        res.status(200).json({ message: 'Task category updated successfully', result });
+      } catch (error) {
+        console.error("Error updating task category:", error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+
     // Get all tasks
     app.get('/tasks', async (req, res) => {
       try {
@@ -162,33 +196,31 @@ async function run() {
       }
     });
 
-
     // Get only "In Progress" tasks by email
-app.get('/tasks/inprogress/:email', async (req, res) => {
-  try {
-    const userEmail = req.params.email;
-    const tasks = await tasksCollection.find({ email: userEmail, category: "In Progress" }).toArray();
+    app.get('/tasks/inprogress/:email', async (req, res) => {
+      try {
+        const userEmail = req.params.email;
+        const tasks = await tasksCollection.find({ email: userEmail, category: "In Progress" }).toArray();
 
-    res.status(200).json(tasks);
-  } catch (error) {
-    console.error("Error fetching In Progress tasks:", error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
+        res.status(200).json(tasks);
+      } catch (error) {
+        console.error("Error fetching In Progress tasks:", error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
 
-// Get only "Done" tasks by email
-app.get('/tasks/done/:email', async (req, res) => {
-  try {
-    const userEmail = req.params.email;
-    const tasks = await tasksCollection.find({ email: userEmail, category: "Done" }).toArray();
+    // Get only "Done" tasks by email
+    app.get('/tasks/done/:email', async (req, res) => {
+      try {
+        const userEmail = req.params.email;
+        const tasks = await tasksCollection.find({ email: userEmail, category: "Done" }).toArray();
 
-    res.status(200).json(tasks);
-  } catch (error) {
-    console.error("Error fetching Done tasks:", error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
+        res.status(200).json(tasks);
+      } catch (error) {
+        console.error("Error fetching Done tasks:", error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
 
     // Delete task by id
     app.delete('/tasks/:id', async (req, res) => {
